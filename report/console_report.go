@@ -92,5 +92,14 @@ func (r *consoleReport) GenerateReport(data *PrintableData) (string, error) {
 		fmt.Println(separator)
 	}
 
+	// Print simple copyable summary
+	fmt.Println("")
+	fmt.Println("Copyable Summary (Name - Total Hours):")
+	fmt.Println("")
+	for _, userData := range data.UsersSchedulesSummary {
+		totalHours := userData.NumWorkHours + userData.NumWeekendHours + userData.NumBankHolidaysHours
+		fmt.Printf("%-25s %g\n", userData.Name, totalHours)
+	}
+
 	return "", nil
 }

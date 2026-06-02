@@ -76,7 +76,9 @@ func LoadCalendars(year int) {
 		log.Fatalf("cannot find box '_assets': %s", err.Error())
 	}
 
-	BankHolidaysCalendars = BHCalendars{}
+	if BankHolidaysCalendars == nil {
+		BankHolidaysCalendars = BHCalendars{}
+	}
 	err = calendarsLocation.Walk("calendars", func(path string, f os.FileInfo, err error) error {
 		if err != nil {
 			return err

@@ -190,7 +190,10 @@ func (pd *pagerDutyClient) generateReport() error {
 			lastEndDate = schedule.endDate
 		}
 	}
-	configuration.LoadCalendars(firstStartDate.Year())
+	// Load calendars for all years in the report range
+	for year := firstStartDate.Year(); year <= lastEndDate.Year(); year++ {
+		configuration.LoadCalendars(year)
+	}
 	printableData := &report.PrintableData{
 		Start:         firstStartDate,
 		End:           lastEndDate,
@@ -354,12 +357,6 @@ func (pd *pagerDutyClient) generateScheduleData(scheduleInfo *api.ScheduleInfo, 
 			continue
 		}
 
-		calendarName := fmt.Sprintf("%s-%d", rotationUserConfig.HolidaysCalendar, scheduleInfo.Start.Year())
-		userCalendar, present := configuration.BankHolidaysCalendars[calendarName]
-		if !present {
-			return nil, fmt.Errorf("aborted due to calendar '%s' not found for user '%s'", calendarName, userID)
-		}
-
 		userEmailAddress, err := pd.getUserEmail(userRotaInfo.ID)
 		if err != nil {
 			return nil, fmt.Errorf("aborted due to failed to get user's email address: %w", err)
@@ -381,6 +378,12 @@ func (pd *pagerDutyClient) generateScheduleData(scheduleInfo *api.ScheduleInfo, 
 
 			hourIncrement := float32(Config.RotationInfo.CheckRotationChangeEvery) / 60.0
 			for currentLocalDate.Before(period.End) {
+				// Look up the correct calendar for the current date's year
+				calendarName := fmt.Sprintf("%s-%d", rotationUserConfig.HolidaysCalendar, currentLocalDate.Year())
+				userCalendar, present := configuration.BankHolidaysCalendars[calendarName]
+				if !present {
+					return nil, fmt.Errorf("aborted due to calendar '%s' not found for user '%s' at date %s", calendarName, userID, currentLocalDate.Format("2006-01-02"))
+				}
 				updateDataForDate(&userCalendar, scheduleUserData, currentMonth, currentLocalDate, hourIncrement)
 				currentLocalDate = currentLocalDate.Add(time.Minute * time.Duration(Config.RotationInfo.CheckRotationChangeEvery))
 			}
